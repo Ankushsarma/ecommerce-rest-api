@@ -12,6 +12,9 @@ app.use("/reviews",require("./routes/reviewRoutes"));
 app.use("/wishlist",require("./routes/wishlistRoutes"));
 app.use("/payment",require("./routes/paymentRoutes"));
 
+console.log("anything");
+
+
 
 
 

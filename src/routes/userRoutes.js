@@ -8,11 +8,15 @@ router.put("/update", auth, userController.updateProfile);
 router.put("/change-password", auth, userController.changePassword);
 router.post("/address", auth, userController.addAddress);
 router.get("/address", auth, userController.getAddress);
+router.delete("/address/:id", auth, userController.deleteAddress);
+router.put("/address/default/:id", auth, userController.setDefaultAddress);
+
 
 router.get("/", auth, role("admin"), userController.getUsers);
 router.get("/:id", auth, role("admin"), userController.getUserById);
 router.put("/role/:id", auth, role("admin"), userController.updateUserRole);
 router.delete("/:id", auth, role("admin"), userController.deleteUser);
+
 
 
 

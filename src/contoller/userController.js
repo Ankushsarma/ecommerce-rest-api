@@ -149,49 +149,118 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// Add Address
+
+
+// ================= ADD ADDRESS =================
+// Private
 exports.addAddress = async (req, res) => {
   try {
-    const { address, city, state, pincode, country } = req.body;
+    const { address, city, state, pincode, country, isDefault } = req.body;
 
-    // Example logic (modify based on your DB / User model)
-    const user = req.user; // assuming auth middleware sets req.user
+    const userId = req.user.id; // from auth middleware (JWT)
 
-    if (!user) {
+    if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const newAddress = {
-     ...req.body
-    };
+    // If user sets new default address → remove old default
+    if (isDefault) {
+      await Address.updateMany(
+        { user: userId, isDefault: true },
+        { isDefault: false }
+      );
+    }
 
-    // If using MongoDB User model:
-    user.addresses = user.addresses || [];
-    user.addresses.push(newAddress);
-
-    await user.save();
+    const newAddress = await Address.create({
+      user: userId,
+      address,
+      city,
+      state,
+      pincode,
+      country,
+      isDefault: isDefault || false,
+    });
 
     res.status(201).json({
+      success: true,
       message: "Address added successfully",
-      addresses: user.addresses,
+      address: newAddress,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
-// Get All Addresses
+// ================= GET ALL ADDRESSES =================
+// Private
 exports.getAddress = async (req, res) => {
   try {
-    const user = req.user; // from auth middleware
+    const userId = req.user.id;
 
-    if (!user) {
+    if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const addresses = await Address.find({ user: userId }).sort({
+      isDefault: -1,
+      createdAt: -1,
+    });
+
     res.json({
-      addresses: user.addresses || [],
+      success: true,
+      total: addresses.length,
+      addresses,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deleteAddress = async (req, res) => {
+  try {
+    const address = await Address.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Address deleted",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.setDefaultAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const addressId = req.params.id;
+
+    // Remove old default
+    await Address.updateMany(
+      { user: userId, isDefault: true },
+      { isDefault: false }
+    );
+
+    const address = await Address.findOneAndUpdate(
+      { _id: addressId, user: userId },
+      { isDefault: true },
+      { new: true }
+    );
+
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Default address updated",
+      address,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

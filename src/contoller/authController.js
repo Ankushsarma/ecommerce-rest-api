@@ -7,12 +7,15 @@ const generateToken = require("../utils/generateToken");
 // ================= REGISTER =================
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password,role } = req.body;
 
     const exists = await User.findOne({ email });
     if (exists)
       return res.status(400).json({ message: "User already exists" });
-    const user = await User.create({ name, email, password });
+
+    let userRole ="user";
+    if(role=="seller") userRole="seller"
+    const user = await User.create({ name, email, password ,role:userRole});
 
     const token = generateToken(user._id);
 

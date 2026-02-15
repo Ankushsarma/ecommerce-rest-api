@@ -4,31 +4,31 @@ const crypto = require("crypto");
 const generateToken = require("../utils/generateToken");
 
 
+// ================= REGISTER =================
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-// register
+    const exists = await User.findOne({ email });
+    if (exists)
+      return res.status(400).json({ message: "User already exists" });
+    const user = await User.create({ name, email, password });
 
-exports.register = async(req, res) => {
- try{
-  const {name,email,password} =req.body;
+    const token = generateToken(user._id);
 
-  const exists=await User.findOne({email});
-  if(exists){
-    return res.status(400).json({message:"user already exists"});
+    res.status(201).json({
+      message: "User registered",
+      token,
+      userId: user._id,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  const User=await User.create({name,email,password});
-  const token = generateToken(User._id);
-
-  res.status(201).json({
-    message:"user register",
-    token,
-    userId:User._id
-  })
- } catch(error){
-  res.status(500).json({message:error.message})
- }
 };
 
+
+// ================= LOGIN =================
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -52,6 +52,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // ================= FORGOT PASSWORD =================
 exports.forgotPassword = async (req, res) => {
@@ -78,6 +79,7 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // ================= RESET PASSWORD =================
 exports.resetPassword = async (req, res) => {
